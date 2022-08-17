@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Title</title>
+    <script src="/js/create_element.js"></script>
+</head>
+
+<body>
+    <form id="productForm" action="/api/items" method="POST">
+        <p>상품명 <input type="text" id="pname" name="name"></p>
+        <p>브랜드 <input type="text" id="brand" name="brand"></p>
+        <p>상품설명 <textarea id="desc" cols="10" rows="3" name="desc"></textarea></p>
+        <p>가격 <input type="text" id="price" name="price"></p>
+        <div><button id="createBtn" type="submit">등록</button></div>
+    </form>
+
+    <div><button id="listBtn">목록</button></div>
+    <div><input type="text" id="detailItemId"><button id="detailBtn">조회</button></div>
+    <!-- <div><input type="text" id="delItemId"><button id="delBtn">삭제</button></div> -->
+
+    <div>상품목록</div>
+    <div id="itemList">
+        <div id="msg"></div>
+        <table>
+            <thead>
+                <tr>
+                    <th>아이디</th>
+                    <th>상품명</th>
+                    <th>브랜드</th>
+                    <th>상품설명</th>
+                    <th>가격</th>
+                </tr>
+            </thead>
+            <tbody id="dataList">
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            </tbody>
+        </table>
+
+    </div>
+
+    <script>
+        const $productForm = document.getElementById('productForm');
+        const $parentElement = document.getElementById('dataList');
+
+        //에러표시
+        const displayError = msg => {
+            document.getElementById('msg').textContent = msg;
+        };
+
+        //상품표시
+        const displayProduct = product => {
+            const $tr =
+                makeElements('tr', null,
+                    makeElements('td', null, product.id?.toString()),
+                    makeElements('td', null, product.name),
+                    makeElements('td', null, product.brand),
+                    makeElements('td', null, product.desc),
+                    makeElements('td', null, product.price?.toString()));
+            return $tr;
+        }
+
+        //상품등록
+        const addProduct = result => {
+            if (result.rtcd == '00') {
+                const product = result.data;
+                console.log(product);
+                const $tr = displayProduct(product);
+                $parentElement.appendChild($tr);
+            } else {
+                displayError('상품등록에 문제가 발생했습니다. 관리자에게 문의 바랍니다.');
+            }
+        }
+
+        //상품등록 이벤트 등록
+        $productForm.addEventListener('submit', e => {
+            e.preventDefault();
+            const xhr = new XMLHttpRequest();
+            //const method = $productForm.method;
+            //const action = $productForm.action;
+            const { method, action } = $productForm; // 객체 디스터럭처링
+            xhr.open(method, action);
+            xhr.setRequestHeader('content-type', 'application/json');
+            xhr.send(JSON.stringify(Object.fromEntries(new FormData($productForm))));
+            xhr.addEventListener('load', e => {
+                if (xhr.status == '200') {
+                    console.log(xhr.responseText);
+                    addProduct(JSON.parse(xhr.responseText));
+                } else {
+                    console.log(xhr.status, xhr.statusText);
+                }
+            });
+        });
+
+        //상품목록
+        const listProduct = result => {
+            if (result.rtcd == '00') {
+                const products = result.data;
+                const fragment = new DocumentFragment;
+                products.map(displayProduct)
+                    .forEach(ele => fragment.appendChild(ele));
+                $parentElement.innerHTML = '';
+                $parentElement.appendChild(fragment);
+            } else {
+                displayError ('상품목록 가져오기 문제가 발생했습니다. 관리자에게 문의 바랍니다.');
+            }
+        }
+
+        //상품목록 이벤트 목록
+        listBtn.addEventListener('click', e => {
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', '/api/items');
+            xhr.send(null);
+            xhr.addEventListener('load', e => {
+                if (xhr.status == '200') {
+                    console.log(xhr.responseText);
+                    listProduct(JSON.parse(xhr.responseText));
+                } else {
+                    console.log(xhr.status, xhr.statusText);
+                }
+            });
+
+        });
+
+        //상품조회
+        const detaileItem = result => {
+            if (result.rtcd == '00') {
+                displayProduct(result.data);
+                const $tr = displayProduct(result.data);
+                
+                //목록 제거
+                while($parentElement.firstChild){
+                    $parentElement.removeChild($parentElement.firstChild)
+                }
+                $parentElement.appendChild($tr);
+            } else {
+                displayError('상품조회 가져오기 문제가 발생했습니다. 관리자에게 문의 바랍니다.');
+            }
+        }
+
+
+        //상품조회 이벤트 등록
+        detailBtn.addEventListener('click', e => {
+            const productId = detailItemId.value;
+            if (!productId) {
+                alert('상품번호를 입력해주세요.');
+                detailItemId.focus();
+                return;
+            }
+            
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET',`/api/items/${productId}`);
+            xhr.send(null);
+            xhr.addEventListener('load', e=>{
+
+                if(xhr.status=='200'){
+                    console.log(xhr.responseText);
+                    detaileItem(JSON.parse(xhr.responseText));
+                }else{
+                    console.log(xhr.status, xhr.statusText);
+                }
+            });
+
+        });
+
+    </script>
+</body>
+
+</html>
