@@ -26,6 +26,11 @@ public class ApiItemController {
 
     Item savedItem = itemDAO.save(item);
     ApiResult<Item> result = new ApiResult<>("00", "success", savedItem);
+    //===================================
+    // ApiResult<Item> result = null;
+    // if()
+    // new ApiResult<>("00", "success", savedItem);
+    //===================================
     return result;
   }
 

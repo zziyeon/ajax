@@ -25,8 +25,11 @@
         <div><button id="createBtn" type="submit">등록</button></div>
     </form>
 
-    <div><button id="listBtn">목록</button></div>
-    <div><button id="delBtn">삭제</button></div>
+    <div>
+        <button id="listBtn">목록</button>
+        <button id="saveBtn">저장</button>
+        <button id="delBtn">삭제</button>
+    </div>
     <div><input type="text" id="detailItemId"><button id="detailBtn">조회</button></div>
     <!-- <div><input type="text" id="delItemId"><button id="delBtn">삭제</button></div> -->
 
@@ -52,7 +55,6 @@
                     <td></td>
                     <td></td>
                     <td></td>
-                    <td></td>
                 </tr>
             </tbody>
         </table>
@@ -71,23 +73,39 @@
         const clearMsg = msg => {
             document.getElementById('msg').textContent = '';
         };
-        
+
 
         //상품표시
-        const displayProduct = product => {
-            const $tr =
-                makeElements('tr', {'data-product-id':product.id},
-                    makeElements('td',null,
-                        makeElements('input',{type: 'checkbox','data-product-id':product.id})),
-                    makeElements('td', null, product.id?.toString()),
-                    makeElements('td', null, product.name),
-                    makeElements('td', null, product.brand),
-                    makeElements('td', null, product.desc),
-                    makeElements('td', null, product.price?.toString()),
-                    makeElements('td', null, 
-                        makeElements('button',{'id':'updateBtn'},'수정')));
+        const displayProduct = ({id, name, brand, desc, price}) => {
+            const $tr = 
+                makeElements('tr', { 'data-product-id': id },
+                    makeElements('td', null,
+                        makeElements('input', { type: 'checkbox', 'data-product-id': id })),
+                    makeElements('td', null, id+''),
+                    makeElements('td', null, name),
+                    makeElements('td', null, brand),
+                    makeElements('td', null, desc),
+                    makeElements('td', null, price+''),
+                    makeElements('td', null,
+                        makeElements('button', { 'id': 'updateBtn' }, '수정')));
             return $tr;
         }
+
+        // //상품표시
+        // const displayProduct = product => {
+        //     const $tr =
+        //         makeElements('tr', { 'data-product-id': product.id },
+        //             makeElements('td', null,
+        //                 makeElements('input', { type: 'checkbox', 'data-product-id': product.id })),
+        //             makeElements('td', null, product.id+''),
+        //             makeElements('td', null, product.name),
+        //             makeElements('td', null, product.brand),
+        //             makeElements('td', null, product.desc),
+        //             makeElements('td', null, product.price+''),
+        //             makeElements('td', null,
+        //                 makeElements('button', { 'id': 'updateBtn' }, '수정')));
+        //     return $tr;
+        // }
 
         //상품등록
         const addProduct = result => {
@@ -109,11 +127,22 @@
             const xhr = new XMLHttpRequest();
             //const method = $productForm.method;
             //const action = $productForm.action;
+            // -------------------------------------
+            const $input = document.querySelectorAll('#productForm input[type=text');
+            const $nullbox = Array.from($input);
+            if($nullbox[0].value==''&& $nullbox[1].value==''&&$nullbox[2].value==''){
+            // if($nullbox.forEach((ele, idx)=>console.log($nullbox[idx].value===''))){
+                displayMsg('상품정보를 입력하세요');
+            } else {
+            // -------------------------------------
             const { method, action } = $productForm; // 객체 디스터럭처링
             xhr.open(method, action);
             xhr.setRequestHeader('content-type', 'application/json');
             xhr.send(JSON.stringify(Object.fromEntries(new FormData($productForm))));
+            }
+
             xhr.addEventListener('load', e => {
+                console.log('ddddd' + xhr.status);
                 if (xhr.status == '200') {
                     console.log(xhr.responseText);
                     addProduct(JSON.parse(xhr.responseText));
@@ -135,36 +164,36 @@
                 $parentElement.appendChild(fragment);
                 clearMsg();
             } else {
-                displayMsg ('상품목록 가져오기 문제가 발생했습니다. 관리자에게 문의 바랍니다.');
+                displayMsg('상품목록 가져오기 문제가 발생했습니다. 관리자에게 문의 바랍니다.');
             }
         }
 
         //전체 목록 가져오기
-        const disploayList=()=>{
+        const displayList = () => {
             const xhr = new XMLHttpRequest();
-                xhr.open('GET', '/api/items');
-                xhr.send(null);
-                xhr.addEventListener('load', e => {
-                    if (xhr.status == '200') {
-                        console.log(xhr.responseText);
-                        listProduct(JSON.parse(xhr.responseText));
-                    } else {
-                        console.log(xhr.status, xhr.statusText);
-                    }
-                });
+            xhr.open('GET', '/api/items');
+            xhr.send(null);
+            xhr.addEventListener('load', e => {
+                if (xhr.status == '200') {
+                    console.log(xhr.responseText);
+                    listProduct(JSON.parse(xhr.responseText));
+                } else {
+                    console.log(xhr.status, xhr.statusText);
+                }
+            });
         }
 
         //상품목록 이벤트 목록
-        listBtn.addEventListener('click', disploayList);
+        listBtn.addEventListener('click', displayList);
 
         //상품조회
         const detaileItem = result => {
             if (result.rtcd == '00') {
                 displayProduct(result.data);
                 const $tr = displayProduct(result.data);
-                
+
                 //목록 제거
-                while($parentElement.firstChild){
+                while ($parentElement.firstChild) {
                     $parentElement.removeChild($parentElement.firstChild)
                 }
                 $parentElement.appendChild($tr);
@@ -182,61 +211,61 @@
                 alert('상품번호를 입력해주세요.');
                 detailItemId.focus();
                 return;
-            }            
+            }
             const xhr = new XMLHttpRequest();
-            xhr.open('GET',`/api/items/${productId}`);
+            xhr.open('GET', `/api/items/${productId}`);
             xhr.send(null);
-            xhr.addEventListener('load', e=>{
-                if(xhr.status=='200'){
+            xhr.addEventListener('load', e => {
+                if (xhr.status == '200') {
                     console.log(xhr.responseText);
                     detaileItem(JSON.parse(xhr.responseText));
-                }else{
+                } else {
                     console.log(xhr.status, xhr.statusText);
                 }
             });
         });
-    
+
         //전체선택
         // const $delAll = document.getElementById('delAll');
         let isCheckedAll = false;
-        delAll.addEventListener('click',e=>{
+        delAll.addEventListener('click', e => {
             const $inputs = document.querySelectorAll('#dataList input[type=checkbox]');
             // $inputs.forEach(ele=>{isCheckedAll ?  ele.checked = false : ele.checked = true});
-            $inputs.forEach(ele=>{ele.checked = !isCheckedAll});
-            isCheckedAll=!isCheckedAll;
+            $inputs.forEach(ele => { ele.checked = !isCheckedAll });
+            isCheckedAll = !isCheckedAll;
         });
 
         //상품삭제
-        const deleteItem =(ele,result)=>{
-            if(result.rtcd=='00'){
+        const deleteItem = (ele, result) => {
+            if (result.rtcd == '00') {
                 $parentElement.removeChild(ele.closest('tr'));
                 clearMsg();
             } else {
                 displayMsg('상품삭제에 문제가 발생했습니다. 관리자에게 문의 바랍니다.');
             }
         }
-        
+
         //상품삭제 이벤트 등록
-        delBtn.addEventListener('click', e=>{
+        delBtn.addEventListener('click', e => {
             const $inputs = document.querySelectorAll('#dataList input[type=checkbox]');
             //체크박스 선택된 요소 배열로 만들기
-            const $checkedBoxes = Array.from($inputs).filter(ele=>ele.checked);
+            const $checkedBoxes = Array.from($inputs).filter(ele => ele.checked);
             const countOfcheckedBox = $checkedBoxes.length;
-            if(countOfcheckedBox==0){
+            if (countOfcheckedBox == 0) {
                 displayMsg('삭제할 상품을 선택하세요');
                 return;
             }
             // if(!confirm('삭제하시겠습니까?')) return;
 
-            $checkedBoxes.forEach(ele=>{
+            $checkedBoxes.forEach(ele => {
                 const xhr = new XMLHttpRequest;
-                xhr.open('DELETE',`/api/items/${ele.dataset.productId}`);
+                xhr.open('DELETE', `/api/items/${ele.dataset.productId}`);
                 xhr.send(null);
-                xhr.addEventListener('load',e=>{
-                    if(xhr.status == 200){
-                        console.log(xhr.responseText);                    
+                xhr.addEventListener('load', e => {
+                    if (xhr.status == 200) {
+                        console.log(xhr.responseText);
                         deleteItem(ele, JSON.parse(xhr.responseText));
-                    }else{
+                    } else {
                         console.log(xhr.status, xhr.statusText);
                     }
                 });
@@ -244,15 +273,64 @@
         });
 
         //수정버튼 이벤트 등록(이벤트위임)
-        dataList.addEventListener('click',e=>{
+        dataList.addEventListener('click', e => {
             console.log(e.target);
-            if(e.targetName !=='BUTTON') return;
+            if (e.target.tagName !== 'BUTTON') return;
 
             const $updateBtn = e.target;
-            
+            const $tds = $updateBtn.closest('tr').querySelectorAll('td');
+            const contents = Array.from($tds).filter((ele, idx, arr) => idx != 0 && idx != arr.length- 1).map(ele => ele.textContent);
+
+            productId.textContent= contents[0];
+            pname.value = contents[1];
+            brand.value = contents[2];
+            desc.value = contents[3];
+            price.value = contents[4];
+            // productId pname brand desc price = [contents];
+
+            // $details.forEach(console.log);
+            // ↑ 간단하게 이렇게 표현 가능 $details.forEach(ele => console.log(ele));
+
         });
 
-        disploayList();
+        //상품수정
+        const saveProduct = result => {
+            if (result.rtcd == '00') {
+                const $updateBtn = document.querySelector(`tr[data-product-id=${result.data.id}]`)
+                const $tr = $updateBtn.closest('tr');
+                const $tds = $tr.querySelectorAll('td');
+                const contents = Array.from($tds).filter((ele, idx, arr) => idx != 0 && idx != arr.length- 1);
+
+                contents[0].textContent = result.data.id;
+                contents[1].textContent = result.data.name;
+                contents[2].textContent = result.data.brand;
+                contents[3].textContent = result.data.desc;
+                contents[4].textContent = result.data.price;
+
+                clearMsg();
+            } else {
+                displayMsg('상품수정에 문제가 발생했습니다. 관리자에게 문의 바랍니다.');
+            }
+        }
+
+        //상품수정 이벤트 등록
+        saveBtn.addEventListener('click', e => {
+            const xhr = new XMLHttpRequest();
+            const pid= productId.textContent;
+            xhr.open('PATCH',`/api/items/${pid}`);
+            xhr.setRequestHeader('content-type', 'application/json');
+            xhr.send(JSON.stringify(Object.fromEntries(new FormData($productForm))));
+            xhr.addEventListener('load', e => {
+                if (xhr.status == '200') {
+                    console.log(xhr.responseText);
+                    saveProduct(e, JSON.parse(xhr.responseText));
+                } else {
+                    console.log(xhr.status, xhr.statusText);
+                }
+            });
+        });
+
+        displayList();
     </script>
 </body>
 
